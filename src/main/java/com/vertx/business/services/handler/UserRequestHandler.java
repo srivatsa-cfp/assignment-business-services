@@ -43,42 +43,16 @@ public class UserRequestHandler {
         logger.info("User Register Request Handler");
         try {
             JsonObject jsonObject = context.getBodyAsJson();
-            String userid = jsonObject.getString("userid");
-            String password = jsonObject.getString("password");
-            jsonObject.put("createdAt", System.currentTimeMillis());
-            jsonObject.put("accountLocked", false);
-
-            if (userid == null || password == null) {
-                JsonObject output = new JsonObject();
-                output.put("message", "Incorrect UserId/Password");
-                logger.error("User Id or Password cannot be blank");
-                context.response().setStatusCode(400).send(output.toString());
-            }
-
-            String hashAlgo = config.getString(Constants.HASH_ALGO.getValue());
-            String hashSalt = config.getString(Constants.HASH_SALT.getValue());
-            String hash = strategy.hash(hashAlgo, null, hashSalt, password);
-
-            jsonObject.put("_id", userid);
             jsonObject.put(Constants.OPERATION.getValue(), "register");
-            jsonObject.put("password", hash);
-
             logger.info("Sending event to User Verticle Address");
-
             vertx.eventBus().request(Constants.USER_VERTICLE_ADDRESS.getValue(),
                     jsonObject, result -> {
-                        JsonObject output;
                         if (result.succeeded()) {
                             logger.info("Successfully registered the user");
-                            output = (JsonObject) result.result().body();
-                            output.put("message", "Registered Successfully");
-                            context.response().setStatusCode(201).send(output.toString());
+                            context.response().setStatusCode(201).send("Successfully registered the user");
                         } else {
-                            logger.info("Unable to register the user");
-                            output = new JsonObject();
-                            output.put("message", result.cause().getMessage());
-                            output.getString("message");
-                            context.response().setStatusCode(500).send(output.toString());
+                            logger.error("Unable to register the user");
+                            context.response().setStatusCode(500).send("Failed to register the user");
                         }
                     });
         } catch (Exception ex){
@@ -89,27 +63,12 @@ public class UserRequestHandler {
 
     public void loginHandler(RoutingContext context) {
         logger.info("User Register Request Handler");
-
         try {
             JsonObject jsonObject = context.getBodyAsJson();
+            jsonObject.put(Constants.OPERATION.getValue(), "validateLogin");
             String userid = jsonObject.getString("userid");
             String password = jsonObject.getString("password");
-            jsonObject.put("lastLoginTime", System.currentTimeMillis());
-            jsonObject.put("loginStatus", "ACTIVE");
-            jsonObject.put("accountLocked", false);
-
-            if (userid == null || password == null) {
-                JsonObject output = new JsonObject();
-                output.put("message", "Incorrect UserId/Password");
-                logger.error("User Id or Password is incorrect");
-                context.response().setStatusCode(400).send(output.toString());
-            }
-
-            jsonObject.put(Constants.OPERATION.getValue(), "validateLogin");
-            jsonObject.put("_id", userid);
-
             logger.info("Sending event to User Verticle Address");
-
             vertx.eventBus().request(Constants.USER_VERTICLE_ADDRESS.getValue(),
                     jsonObject, result -> {
                 JsonObject output;

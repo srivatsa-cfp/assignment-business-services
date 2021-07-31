@@ -73,10 +73,7 @@ public class MongoHelper {
     public void insert(String collection, Message<JsonObject> message) {
         mongoClient.insert(collection, message.body()).onComplete(r -> {
             if(r.succeeded()) {
-                JsonObject jsonObject = new JsonObject();
-                jsonObject.put("id", r.result());
-                jsonObject.put("message", "success");
-                message.reply(jsonObject);
+                message.reply("success");
             } else {
                 logger.error("Unable to insert " + r.cause().getMessage());
                 message.fail(500, r.cause().getMessage());

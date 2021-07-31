@@ -1,0 +1,16 @@
+{
+  "port": 8080,
+  "mongoUrl": "mongodb://localhost:27017",
+  "db_name": "userBlog",
+  "username": "root",
+  "password": "rootpassword",
+  "authSource": "admin",
+  "userCollectionName": "user",
+  "jwtType": "jceks",
+  "jwtKeyPath": "/Users/vatsa/assignment/assignment-business-services/keystore.jceks",
+  "jwtSecret": "secret",
+  "salt": "secret",
+  "hashAlgo": "sha512",
+  "workerPoolSize": 10,
+  "userVerticleAddress": "com.vertx.business.services.workers.UserVerticle"
+}

@@ -2,8 +2,6 @@ package com.vertx.business.services;
 
 import com.vertx.business.services.config.ConfigObject;
 import com.vertx.business.services.constants.Constants;
-import com.vertx.business.services.handler.BlogRequestHandler;
-import com.vertx.business.services.handler.CommentBlogRequestHandler;
 import com.vertx.business.services.handler.UserRequestHandler;
 import com.vertx.business.services.helper.ConfigHelper;
 import com.vertx.business.services.helper.JWTHelper;
@@ -44,16 +42,9 @@ public class MainVerticle extends AbstractVerticle {
                     logger.info("Deploying worker verticles");
 
                     vertx.deployVerticle(config.getString("userVerticleAddress"), options);
-                    vertx.deployVerticle(config.getString("blogVerticleAddress"), options);
 
                     // Create a router object.
                     Router router = Router.router(vertx);
-                    router.mountSubRouter("/v1/blog", new BlogRequestHandler().getRouter(vertx));
-                    try {
-                        router.mountSubRouter("/v1/comment", new CommentBlogRequestHandler().getRouter(vertx));
-                    } catch (Exception e) {
-                        logger.error("Failed to create the comment router " + e.getMessage());
-                    }
                     router.mountSubRouter("/v1/user", new UserRequestHandler().getRouter(vertx));
 
                     // Create the HTTP server and pass the "accept" method to the request handler.

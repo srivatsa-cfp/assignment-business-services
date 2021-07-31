@@ -33,7 +33,6 @@ public class JWTHelper {
 
         logger.info("JWT TYPE" + config.getString(Constants.JWT_TYPE.getValue()));
         logger.info("JWT PATH" + config.getString(Constants.JWT_KEY_PATH.getValue()));
-        logger.info("JWT SECRET" + config.getString(Constants.JWT_SECRET.getValue()));
 
         if(jwtConfig == null) {
             jwtConfig = new JWTAuthOptions()
@@ -53,8 +52,9 @@ public class JWTHelper {
     }
 
     public boolean validate(String authHeader) {
-        if (authHeader == null) return false;
+        if (authHeader == null || authHeader.isEmpty() ) return false;
         String[] auth = authHeader.split(" ");
+        if(auth.length <=1 ) return false;
         String authType = auth[0];
         String token = auth[1];
         if (!authType.equalsIgnoreCase("Bearer")) {
