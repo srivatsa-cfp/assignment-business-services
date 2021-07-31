@@ -1,38 +1,36 @@
 package com.vertx.business.services.handler;
 
+import com.vertx.business.services.config.ConfigObject;
 import com.vertx.business.services.constants.Constants;
 import com.vertx.business.services.helper.JWTHelper;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.impl.CookieImpl;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.auth.HashingAlgorithm;
 import io.vertx.ext.auth.HashingStrategy;
 import io.vertx.ext.auth.JWTOptions;
-import io.vertx.ext.auth.impl.HashingStrategyImpl;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-
 public class UserRequestHandler {
+
+    private final Logger logger = LoggerFactory.getLogger(UserRequestHandler.class);
 
     private Vertx vertx;
     private HashingStrategy strategy = HashingStrategy.load();
+    private JsonObject config;
 
     public Router getRouter(Vertx vertx) {
         this.vertx = vertx;
+        this.config = ConfigObject.getInstance().getConfig();
         Router router = Router.router(vertx);
         router.route().handler(BodyHandler.create());
 
         router.post("/login")
                 .handler(this::loginHandler)
-                .failureHandler(this::failurHandler);
-
-        router.post("/logout")
-                .handler(this::logoutHandler)
                 .failureHandler(this::failurHandler);
 
         router.post("/register")
@@ -42,117 +40,132 @@ public class UserRequestHandler {
     }
 
     public void registerHandler(RoutingContext context) {
-        JsonObject jsonObject = context.getBodyAsJson();
-        String userid = jsonObject.getString("userid");
-        String password = jsonObject.getString("password");
-        jsonObject.put("createdAt", System.currentTimeMillis());
-        jsonObject.put("lastLoginTime", System.currentTimeMillis());
-        jsonObject.put("accountLocked", false);
+        logger.info("User Register Request Handler");
+        try {
+            JsonObject jsonObject = context.getBodyAsJson();
+            String userid = jsonObject.getString("userid");
+            String password = jsonObject.getString("password");
+            jsonObject.put("createdAt", System.currentTimeMillis());
+            jsonObject.put("accountLocked", false);
 
-        if(userid == null || password == null) {
-            JsonObject output = new JsonObject();
-            output.put("message", "Incorrect UserId/Password");
-            context.response().setStatusCode(400).send(output.toString());
-        }
-
-        String hash = strategy.hash("sha512", null, "123", password);
-        jsonObject.put("_id", userid);
-        jsonObject.put("OPERATION", "register");
-        jsonObject.put("password",hash);
-
-        vertx.eventBus().request("UserVerticle",jsonObject, result -> {
-            JsonObject output;
-            if(result.succeeded()) {
-                output = (JsonObject) result.result().body();
-                output.put("message", "Registered Successfully");
-                context.response().setStatusCode(201).send(output.toString());
-            } else {
-                output = new JsonObject();
-                output.put("message", result.cause().getMessage());
-                output.getString("message");
-                context.response().setStatusCode(500).send(output.toString());
+            if (userid == null || password == null) {
+                JsonObject output = new JsonObject();
+                output.put("message", "Incorrect UserId/Password");
+                logger.error("User Id or Password cannot be blank");
+                context.response().setStatusCode(400).send(output.toString());
             }
-        });
+
+            String hashAlgo = config.getString(Constants.HASH_ALGO.getValue());
+            String hashSalt = config.getString(Constants.HASH_SALT.getValue());
+            String hash = strategy.hash(hashAlgo, null, hashSalt, password);
+
+            jsonObject.put("_id", userid);
+            jsonObject.put(Constants.OPERATION.getValue(), "register");
+            jsonObject.put("password", hash);
+
+            logger.info("Sending event to User Verticle Address");
+
+            vertx.eventBus().request(Constants.USER_VERTICLE_ADDRESS.getValue(),
+                    jsonObject, result -> {
+                        JsonObject output;
+                        if (result.succeeded()) {
+                            logger.info("Successfully registered the user");
+                            output = (JsonObject) result.result().body();
+                            output.put("message", "Registered Successfully");
+                            context.response().setStatusCode(201).send(output.toString());
+                        } else {
+                            logger.info("Unable to register the user");
+                            output = new JsonObject();
+                            output.put("message", result.cause().getMessage());
+                            output.getString("message");
+                            context.response().setStatusCode(500).send(output.toString());
+                        }
+                    });
+        } catch (Exception ex){
+            logger.info("Error in User Registration Handler"+ ex.getMessage());
+            context.response().setStatusCode(500).send(ex.getMessage());
+        }
     }
 
     public void loginHandler(RoutingContext context) {
-        JsonObject jsonObject = context.getBodyAsJson();
-        String userid = jsonObject.getString("userid");
-        String password = jsonObject.getString("password");
-        jsonObject.put("lastLoginTime", System.currentTimeMillis());
-        jsonObject.put("loginStatus", "ACTIVE");
-        jsonObject.put("accountLocked", false);
+        logger.info("User Register Request Handler");
 
-        if(userid == null || password == null) {
-            JsonObject output = new JsonObject();
-            output.put("message", "Incorrect UserId/Password");
-            context.response().setStatusCode(400).send(output.toString());
-        }
+        try {
+            JsonObject jsonObject = context.getBodyAsJson();
+            String userid = jsonObject.getString("userid");
+            String password = jsonObject.getString("password");
+            jsonObject.put("lastLoginTime", System.currentTimeMillis());
+            jsonObject.put("loginStatus", "ACTIVE");
+            jsonObject.put("accountLocked", false);
 
-        jsonObject.put("OPERATION", "login");
-        jsonObject.put("_id", userid);
+            if (userid == null || password == null) {
+                JsonObject output = new JsonObject();
+                output.put("message", "Incorrect UserId/Password");
+                logger.error("User Id or Password is incorrect");
+                context.response().setStatusCode(400).send(output.toString());
+            }
 
-        vertx.eventBus().request("UserVerticle",jsonObject, result -> {
-            JsonObject output;
-            if(result.succeeded()) {
-                output = (JsonObject) result.result().body();
-                String docUserId = output.getJsonArray(Constants.DATA.getValue()).getJsonObject(0).getString("userid");
-                String docPassword = output.getJsonArray(Constants.DATA.getValue()).getJsonObject(0).getString("password");
-                if( docUserId != null && docPassword != null && strategy.verify(docPassword, password)
-                 &&  docUserId.equalsIgnoreCase(userid)) {
-                    String token = JWTHelper.getInstance().getProvider().generateToken(
-                            new JsonObject().put("sub", "docUserId"), new JWTOptions());
-                    Cookie cookie = new CookieImpl("Authorization", token);
-                    context.addCookie(cookie);
-                    context.response().setStatusCode(200).send("Logged in Successfully");
+            jsonObject.put(Constants.OPERATION.getValue(), "validateLogin");
+            jsonObject.put("_id", userid);
+
+            logger.info("Sending event to User Verticle Address");
+
+            vertx.eventBus().request(Constants.USER_VERTICLE_ADDRESS.getValue(),
+                    jsonObject, result -> {
+                JsonObject output;
+                if (result.succeeded()) {
+                    output = (JsonObject) result.result().body();
+                    JsonObject userDocument = output.getJsonArray(Constants.DATA.getValue()).getJsonObject(0);
+                    String docUserId = userDocument.getString("userid");
+                    String docPassword = userDocument.getString("password");
+
+                    if (docUserId != null && docPassword != null && strategy.verify(docPassword, password)
+                            && docUserId.equalsIgnoreCase(userid)) {
+                        logger.info("Successful in validating login credentials and generating the jwt token");
+                        String token = null;
+                        try {
+                             token = JWTHelper.getInstance().generateToken(docUserId);
+                        } catch (Exception ex) {
+                            logger.info("failure in generating the jwt token");
+                            context.response().setStatusCode(500).send("Failure in generating the token");
+                        }
+                        if(token != null) {
+
+                            userDocument.put(Constants.OPERATION.getValue(), "updateLogin");
+                            userDocument.put("lastLoginTime", System.currentTimeMillis());
+                            userDocument.put("loginStatus", Constants.ACTIVE.getValue());
+                            userDocument.put("accountLocked", false);
+
+                            logger.info("Publishing the event to update login status");
+
+                            vertx.eventBus().publish(Constants.USER_VERTICLE_ADDRESS.getValue(), userDocument);
+
+                            Cookie cookie = new CookieImpl(Constants.AUTHORIZATION.getValue(), token);
+                            context.addCookie(cookie);
+                            context.response().setStatusCode(200).send("Logged in Successfully");
+                        } else {
+                            context.response().setStatusCode(500).send("Failure in generating the token");
+                        }
+                    } else {
+                        context.response().setStatusCode(400).send("Invalid User/Id password");
+                    }
                 } else {
-                    context.response().setStatusCode(201).send("Invalid User/Id password");
+                    output = new JsonObject();
+                    output.put("message", result.cause().getMessage());
+                    output.getString("message");
+                    context.response().setStatusCode(500).send(output.toString());
                 }
-            } else {
-                output = new JsonObject();
-                output.put("message", result.cause().getMessage());
-                output.getString("message");
-                context.response().setStatusCode(500).send(output.toString());
-            }
-        });
-
-    }
-
-
-    public void logoutHandler(RoutingContext context) {
-
-        JsonObject jsonObject = context.getBodyAsJson();
-        String userid = jsonObject.getString("userid");
-        jsonObject.put("lastLogoutTime", System.currentTimeMillis());
-        jsonObject.put("loginStatus", "INACTIVE");
-
-        if(userid == null) {
-            JsonObject output = new JsonObject();
-            output.put("message", "Incorrect UserId");
-            context.response().setStatusCode(400).send(output.toString());
+            });
+        } catch (Exception ex) {
+            logger.error("Exception in Login Handler "+ ex.getMessage());
+            context.response().setStatusCode(500).send(ex.getMessage());
         }
-
-        jsonObject.put("OPERATION", "logout");
-
-        vertx.eventBus().request("UserVerticle",jsonObject, result -> {
-            JsonObject output;
-            if(result.succeeded()) {
-                output = (JsonObject) result.result().body();
-                output.put("message", "Logout Successfully");
-                context.response().setStatusCode(201).send(output.toString());
-            } else {
-                output = new JsonObject();
-                output.put("message", "Failed to Logout");
-                output.getString("message");
-                context.response().setStatusCode(500).send(output.toString());
-            }
-        });
     }
 
     private void failurHandler(RoutingContext context) {
-        String errorCode = "400";
+        int errorCode = 500;
         String errorMessage = "API ERROR";
-        context.response().setStatusCode(500).end(errorMessage);
+        context.response().setStatusCode(errorCode).end(errorMessage);
     }
 }
 
