@@ -53,7 +53,7 @@ public class MainVerticle extends AbstractVerticle {
                             port,
                             result -> {
                                 if (result.succeeded()) {
-                                    logger.info("Server Started at port " + port + "at" + LocalDateTime.now());
+                                    logger.info("Server Started at port " + port + " at " + LocalDateTime.now());
                                     startPromise.complete();
                                 } else {
                                     logger.error("Failed to start the Server " + result.cause().getCause());
