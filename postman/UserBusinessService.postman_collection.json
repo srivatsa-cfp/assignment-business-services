@@ -1,0 +1,81 @@
+{
+	"info": {
+		"_postman_id": "431c4fa5-6c9e-4a5e-98e1-5b3986ed18da",
+		"name": "UserBusinessService",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Registration Service",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMS52YXRzYUBnbWFpbC5jb20iLCJpYXQiOjE2Mjc2NzMwMzd9.P6nDdq2ajT2NeLZfRxauBi_A2mwOU0bEgpvh0B8Io-E",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"userid\": \"test@gmail.com\",\n    \"password\":\"abcd@123\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Dean\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/v1/user/register",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"v1",
+						"user",
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "LoginService",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMS52YXRzYUBnbWFpbC5jb20iLCJpYXQiOjE2Mjc2NzMwMzd9.P6nDdq2ajT2NeLZfRxauBi_A2mwOU0bEgpvh0B8Io-E",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"userid\": \"test@gmail.com\",\n    \"password\":\"abcd@123\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/v1/user/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"v1",
+						"user",
+						"login"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

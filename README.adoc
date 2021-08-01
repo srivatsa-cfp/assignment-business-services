@@ -1,12 +1,16 @@
-= Vert.x 3.1 Simplest Gradle project
+= User Business Service
 
-This project shows a very simple hello world Vert.x 3.1 project using Gradle, which has a simple HTTP server which
-simply returns "Hello World!" to every request.
+This service provides ability for user registration and login to blog project, which has a Vertx HTTP server which
+handles user registration and user login requests.
 
-In this example Vert.x is used embedded. I.e. we use the Vert.x APIs directly in our own classes rather than deploying
+In this service Vert.x is used embedded. I.e. we use the Vert.x APIs directly in our own classes rather than deploying
 the code in verticles.
 
-You can run or debug the example in your IDE by just right clicking the main class and run as.. or debug as...
+All the configuration are available in config
+
+     dev.json - Local setup
+     uat.json - Test environment setup
+     prod.json - Production environment setup
 
 The build.gradle uses the Gradle shadowJar plugin to assemble the application and all it's dependencies into a single "fat" jar.
 
@@ -14,15 +18,37 @@ To build the "fat jar"
 
     ./gradlew shadowJar
 
-Because the application plugin is being used, you may directly run the application:
+Run the fat jar as a standalone runnable jar:
 
-    ./gradlew run
+     java -jar -Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.Log4j2LogDelegateFactory build/libs/user-business-service-4.1.2-fat.jar
 
-You may also run the fat jar as a standalone runnable jar:
+Before running the standalone jar following steps are needed:
 
-    java -jar build/libs/gradle-simplest-4.1.2-fat.jar
+     export PROFILE_NAME = dev
+
+There is a docker-compose.yml which sets up the Mongo Database instance. Simply run the following command to setup the
+Mongo DB instance.
+
+    docker-compose up -d
+
+You can use Mongo Atlas to visually look into the Database.Mongo Atlas can be downloaded from https://www.mongodb.com/
 
 (You can take that jar and run it anywhere there is a Java 8+ JDK. It contains all the dependencies it needs so you
 don't need to install Vert.x on the target machine).
 
-Now point your browser at http://localhost:8080
+Now point your request at http://localhost:8080 or port which you have configured in config/dev.json
+
+Project also has the following json file to set up the all services in Postman application
+
+     UserBusinessService.postman_collection.json
+
+All the Test classes are available in Test Folder. If you are using IntelliJ, go to src/test/java,
+Right click on com.vertx.business.services.test and Run Tests.
+
+For Performance Testing, go to the jmeterReport and run the `*.jmx` file from login/register folder. Go to
+jmeterReport/login/index.html or jmeterReport/register/index.html for more detailed statistics about the performance
+report. You can download the jmeter from https://jmeter.apache.org/download_jmeter.cgi and go to
+bin/jmeter.sh to run the jmx file and run the following command to generate the report
+
+    ./jmeter -g report.csv -o <path>/jmeterReport/login
+

@@ -9,7 +9,7 @@
   "commentCollectionName": "comment",
   "userCollectionName": "user",
   "jwtType": "jceks",
-  "jwtKeyPath": "/Users/vatsa/assignment/assignment-business-services/keystore.jceks",
+  "jwtKeyPath": "/Users/vatsa/assignment/user-business-service/keystore.jceks",
   "jwtSecret": "secret",
   "salt": "secret",
   "hashAlgo": "sha512",
