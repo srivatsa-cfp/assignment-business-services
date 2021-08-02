@@ -98,12 +98,13 @@ public class UserRequestHandler {
                             logger.info("Publishing the event to update login status");
 
                             vertx.eventBus().publish(Constants.USER_VERTICLE_ADDRESS.getValue(), userDocument);
-
-                            Cookie cookie = new CookieImpl(Constants.AUTHORIZATION.getValue(), token);
-                            context.addCookie(cookie);
-                            context.response().setStatusCode(200).send("Logged in Successfully");
+                            JsonObject data = new JsonObject();
+                            data.put("message", token);
+                            context.response().setStatusCode(201).send(data.toString());
                         } else {
-                            context.response().setStatusCode(500).send("Failure in generating the token");
+                            JsonObject data = new JsonObject();
+                            data.put("message", "Failure in generating the token");
+                            context.response().setStatusCode(500).send(data.toString());
                         }
                     } else {
                         context.response().setStatusCode(400).send("Invalid User/Id password");

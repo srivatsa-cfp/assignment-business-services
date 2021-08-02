@@ -1,0 +1,69 @@
+swagger: "2.0"
+info:
+  version: "1.0"
+  title: User Registration Server
+host: localhost:8080
+basePath: /v1/user
+schemes:
+  - http
+paths:
+  /login:
+    post:
+      tags:
+        - user
+      summary: Login to the Blog Service
+      operationId: validatelogin
+      produces:
+        - application/json
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: login
+          schema:
+            $ref: "#/definitions/LoginRequest"
+      responses:
+        '200':
+          description: token
+        '400':
+          description: Invalid userid/ password
+
+  /register:
+    post:
+      tags:
+        - user
+      summary: Registration to the Blog Service
+      operationId: register
+      produces:
+        - application/json
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: newUser
+          schema:
+            $ref: "#/definitions/LoginRequest"
+      responses:
+        '200':
+          description: success
+        '400':
+          description: bad parameters
+definitions:
+  LoginRequest:
+    type: object
+    properties:
+      userid:
+        type: string
+      password:
+        type: string
+  RegistrationRequest:
+    type: object
+    properties:
+      userid:
+        type: string
+      password:
+        type: string
+      firstName:
+        type: string
+      lastName:
+          type: string

@@ -45,6 +45,14 @@ public class MainVerticle extends AbstractVerticle {
 
                     // Create a router object.
                     Router router = Router.router(vertx);
+                    router.route().handler(io.vertx.ext.web.handler.CorsHandler.create(".*.")
+                            .allowedMethod(io.vertx.core.http.HttpMethod.POST)
+                            .allowedMethod(io.vertx.core.http.HttpMethod.OPTIONS)
+                            .allowCredentials(true)
+                            .allowedHeader("Access-Control-Allow-Method")
+                            .allowedHeader("Access-Control-Allow-Origin")
+                            .allowedHeader("Access-Control-Allow-Credentials")
+                            .allowedHeader("Content-Type"));
                     router.mountSubRouter("/v1/user", new UserRequestHandler().getRouter(vertx));
 
                     // Create the HTTP server and pass the "accept" method to the request handler.
