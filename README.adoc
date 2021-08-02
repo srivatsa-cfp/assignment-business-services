@@ -52,3 +52,4 @@ bin/jmeter.sh to run the jmx file and run the following command to generate the 
 
     ./jmeter -g report.csv -o <path>/jmeterReport/login
 
+FlowChart, Swim Lane and ER diagrams are available in diagrams folder
